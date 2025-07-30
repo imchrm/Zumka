@@ -1,18 +1,27 @@
 [project]
 name = "zumka"
 version = "0.1.0"
-description = ""
+description = "The speech recognition and synthesis R&D project with Yandex SpeechKit (gRPC, audio/text streaming). "
 authors = [
     {name = "Dimitrii Chrm",email = "im.chrm@gmail.com"}
 ]
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "yandex-speechkit (>=1.5.0,<2.0.0)"
+    "yandex-speechkit (>=1.5.0,<2.0.0)",
+    "python-dotenv (>=1.1.1,<2.0.0)",
+    "grpcio (>=1.74.0,<2.0.0)",
+    "grpcio-tools (>=1.74.0,<2.0.0)",
+    "mypy-protobuf (>=3.6.0,<4.0.0)"
 ]
 
 [tool.poetry]
 packages = [{include = "zumka", from = "src"}]
+
+[tool.pylint.'main']
+source-roots = ["src/"]
+# Сообщает Pylint, что члены модулей, начинающихся с yandex.*, могут быть сгенерированы динамически
+generated-members = ["yandex.*", "google.*"]
 
 
 [build-system]
