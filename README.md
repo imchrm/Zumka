@@ -1,63 +1,85 @@
-Потоковое распознавание аудиофайла с помощью API v3
+# [Yandex SpeechKit v3 Streaming STT Example](https://yandex.cloud/ru/docs/speechkit/stt/api/streaming-examples-v3)
+This project demonstrates how to use the Yandex Cloud SpeechKit v3 API for streaming speech-to-text recognition.
 
-формат аудиопотока — LPCM с частотой дискретизации 8000 Гц;
+Authentication is handled via a service account API key.
 
-Аутентификация происходит от имени сервисного аккаунта с помощью API-ключа(https://yandex.cloud/ru/docs/iam/concepts/authorization/api-key) или IAM-токена(https://yandex.cloud/ru/docs/iam/concepts/authorization/iam-token). Подробнее об аутентификации в API SpeechKit.
+## Prerequisites
 
-Чтобы реализовать пример из этого раздела:
+- Python 3.8+
+- [Poetry](https://python-poetry.org/) for dependency management.
 
-    Создайте сервисный аккаунт для работы с API SpeechKit.
+## Setup and Installation
 
-    Назначьте сервисному аккаунту роль ai.speechkit-stt.user или выше на каталог, в котором он был создан.
+Follow these steps to set up the project environment.
 
-    Настройте окружение и создайте клиентское приложение:
+**1. Clone the repository:**
 
-Получите API-ключ или IAM-токен для сервисного аккаунта.
-
-Скачайте пример
-
-аудиофайла для распознавания или используйте свой аудиофайл.
-
-Склонируйте репозиторий Yandex Cloud API:
 ```bash
-git clone https://github.com/yandex-cloud/cloudapi
+git clone https://github.com/imchrm/Zumka.git
+cd zumka
 ```
 
-Репозиторий скачает необходимые файлы .proto, которые являются описанием или контрактом протокола обмена данными между клиентом и Yandex Cloud (Yandex SpeechKit) для обмена через gRPC.
+**2. Initialize Dependencies:**
 
-Установите пакет `grpcio-tools` с помощью менеджера пакетов poetry:
+This project uses some Python dependecies which pointed in `pyproject.toml` file. To download them, and install the Python packages, run the following command in root directory of the project:
 ```bash
-poetry add grpcio-tools
+poetry install
 ```
 
-Генерация stub-файлов.
-В контексте Python, stub-файл (или файл-заглушка) — это файл с расширением .pyi.
+**3. Generate gRPC Client Code for Yandex Cloud API:**
 
-Почему это важно. Код, сгенерированный из .proto файлов для gRPC (как stt_pb2.py и stt_service_pb2_grpc.py), по умолчанию не содержит информации о типах. Pylint, не видя аннотаций типов, не может понять, какие атрибуты существуют у объектов (например, stt_pb2.StreamingOptions), и сообщает об ошибке.
+The gRPC client code (stub files) must be generated from the .proto files. All .proto files you must add from [yandex-cloud/cloudapi/](https://github.com/yandex-cloud/cloudapi.git) library.
 
-Как получить Stub-файлы для Yandex Cloud API?
+  1. ***Управление зависимостями с помощью Git Submodule***
 
-Можно сгенерировать .pyi файлы самостоятельно:
-Установите пакет `mypy-protobuf` для генерации .pyi файлов:
+* Чтобы не хранить код сторонней библиотеки yandex-cloud/cloudapi напрямую в нашем репозитории, мы используем git submodule. Это позволяет нам ссылаться на конкретную версию (коммит) cloudapi, сохраняя наш репозиторий чистым и упрощая обновления.
+* Добавьте (склонируйте) репозиторий Yandex Cloud API, как submodule в ваш проект в папку `src/cloudapi`:
+
+  ```bash
+  git submodule add https://github.com/yandex-cloud/cloudapi.git src/cloudapi
+  ```
+  2. ***Generation of Python files (\*.py) and stub files (\*.pyi) from .proto.***
+
+  Из корня проекта `zumka` выполните команду:
+
+  ```bash
+  python3 -m grpc_tools.protoc -I . -I src/cloudapi/third_party/googleapis \
+    --python_out=src \
+    --mypy_out=src \
+    --grpc_python_out=src \
+    --mypy_grpc_out=src \
+      google/api/http.proto \
+      google/api/annotations.proto \
+      yandex/cloud/api/operation.proto \
+      google/rpc/status.proto \
+      yandex/cloud/operation/operation.proto \
+      yandex/cloud/validation.proto \
+      yandex/cloud/ai/stt/v3/stt_service.proto \
+      yandex/cloud/ai/stt/v3/stt.proto
+  ```
+  В корне вашего проекта `zumka` будут созданы две папки: `/src/google` и `/src/yandex`, которые будут содержать внутри себя сгенерированные Python файлы (*.py) с классами для работы по gRPC с Yandex SpeechKit API и stub-файлы (*.pyi) с описанием интерфейса.  
+
+## Configuration
+
+To use the API, you need to authenticate with Yandex Cloud.
+
+1. Follow the official documentation to create [a service account](https://yandex.cloud/ru/docs/iam/operations/sa/create).
+2. Assign the ai.speechkit-stt.user role (or a higher one) to it.
+3. Get an [API key](https://yandex.cloud/ru/docs/iam/concepts/authorization/api-key) for the service account or [IAM-token](https://yandex.cloud/ru/docs/iam/concepts/authorization/iam-token).
+4. Add API key as parameter YANDEX_API_KEY in `.env` file in root directory of the project.
+
+## Usage
+
+Launch the application 
 ```bash
-poetry add mypy-protobuf
+poetry run python -m zumka.main
 ```
+By default zumka.main is using constant `AUDIO_PATH = "assets/sound/speech_00.pcm"` for speech recognition.
 
-Ниже пример генерации .py файлов и .pui (stub) файлов из .proto
-
-Перейдите в папку со склонированным репозиторием Yandex Cloud API, создайте папку `output` и сгенерируйте в ней код интерфейса клиента:
-
-cd <путь_к_папке_cloudapi>
-mkdir output
-python3 -m grpc_tools.protoc -I . -I third_party/googleapis \
-  --python_out=output \
-  --grpc_python_out=output \    # гененерация .py
-  --mypy_out=output \           # генерация stub (.pyi)
-    google/api/http.proto \
-    google/api/annotations.proto \
-    yandex/cloud/api/operation.proto \
-    google/rpc/status.proto \
-    yandex/cloud/operation/operation.proto \
-    yandex/cloud/validation.proto \
-    yandex/cloud/ai/stt/v3/stt_service.proto \
-    yandex/cloud/ai/stt/v3/stt.proto
+Результат распознавания:
+```bash
+2025-08-01 16:17:19,247 - Test - INFO - Processing speech file: assets/sound/speech_00.pcm
+2025-08-01 16:17:20,020 - Test - INFO - type=partial, alternatives=['нет']
+2025-08-01 16:17:20,068 - Test - INFO - type=final, alternatives=['привет мир']
+2025-08-01 16:17:20,068 - Test - INFO - type=final_refinement, alternatives=['Привет мир']
+```

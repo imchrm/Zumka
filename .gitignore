@@ -42,14 +42,6 @@ Thumbs.db
 # .installed.cfg
 # *.dist-info
 
-# Игнорировать все содержимое папок для моделей STT по языкам
-stt_models/ru-RU/*
-stt_models/uz-UZ/*
-
-# Но явно включить сами папки (чтобы они оставались в репозитории)
-!stt_models/ru-RU/.gitkeep
-!stt_models/uz-UZ/.gitkeep
-
 # Логи и временные файлы приложения (если такие есть)
 *.log
 temp/
@@ -80,3 +72,6 @@ dist/
 # Dockerfile*
 # docker-compose*
 # .dockerignore
+# Generated protobuf files
+src/google/
+src/yandex/
