@@ -1,0 +1,259 @@
+{
+  "session_uuid": {
+    "uuid": "string",
+    "user_request_id": "string"
+  },
+  "audio_cursors": {
+    "received_data_ms": "int64",
+    "reset_time_ms": "int64",
+    "partial_time_ms": "int64",
+    "final_time_ms": "int64",
+    "final_index": "int64",
+    "eou_time_ms": "int64"
+  },
+  "response_wall_time_ms": "int64",
+  // Includes only one of the fields `partial`, `final`, `eou_update`, `final_refinement`, `status_code`, `classifier_update`, `speaker_analysis`, `conversation_analysis`, `summarization`
+  "partial": {
+    "alternatives": [
+      {
+        "words": [
+          {
+            "text": "string",
+            "start_time_ms": "int64",
+            "end_time_ms": "int64"
+          }
+        ],
+        "text": "string",
+        "start_time_ms": "int64",
+        "end_time_ms": "int64",
+        "confidence": "double",
+        "languages": [
+          {
+            "language_code": "string",
+            "probability": "double"
+          }
+        ]
+      }
+    ],
+    "channel_tag": "string"
+  },
+  "final": {
+    "alternatives": [
+      {
+        "words": [
+          {
+            "text": "string",
+            "start_time_ms": "int64",
+            "end_time_ms": "int64"
+          }
+        ],
+        "text": "string",
+        "start_time_ms": "int64",
+        "end_time_ms": "int64",
+        "confidence": "double",
+        "languages": [
+          {
+            "language_code": "string",
+            "probability": "double"
+          }
+        ]
+      }
+    ],
+    "channel_tag": "string"
+  },
+  "eou_update": {
+    "time_ms": "int64"
+  },
+  "final_refinement": {
+    "final_index": "int64",
+    // Includes only one of the fields `normalized_text`
+    "normalized_text": {
+      "alternatives": [
+        {
+          "words": [
+            {
+              "text": "string",
+              "start_time_ms": "int64",
+              "end_time_ms": "int64"
+            }
+          ],
+          "text": "string",
+          "start_time_ms": "int64",
+          "end_time_ms": "int64",
+          "confidence": "double",
+          "languages": [
+            {
+              "language_code": "string",
+              "probability": "double"
+            }
+          ]
+        }
+      ],
+      "channel_tag": "string"
+    }
+    // end of the list of possible fields
+  },
+  "status_code": {
+    "code_type": "CodeType",
+    "message": "string"
+  },
+  "classifier_update": {
+    "window_type": "WindowType",
+    "start_time_ms": "int64",
+    "end_time_ms": "int64",
+    "classifier_result": {
+      "classifier": "string",
+      "highlights": [
+        {
+          "text": "string",
+          "start_time_ms": "int64",
+          "end_time_ms": "int64"
+        }
+      ],
+      "labels": [
+        {
+          "label": "string",
+          "confidence": "double"
+        }
+      ]
+    }
+  },
+  "speaker_analysis": {
+    "speaker_tag": "string",
+    "window_type": "WindowType",
+    "speech_boundaries": {
+      "start_time_ms": "int64",
+      "end_time_ms": "int64"
+    },
+    "total_speech_ms": "int64",
+    "speech_ratio": "double",
+    "total_silence_ms": "int64",
+    "silence_ratio": "double",
+    "words_count": "int64",
+    "letters_count": "int64",
+    "words_per_second": {
+      "min": "double",
+      "max": "double",
+      "mean": "double",
+      "std": "double",
+      "quantiles": [
+        {
+          "level": "double",
+          "value": "double"
+        }
+      ]
+    },
+    "letters_per_second": {
+      "min": "double",
+      "max": "double",
+      "mean": "double",
+      "std": "double",
+      "quantiles": [
+        {
+          "level": "double",
+          "value": "double"
+        }
+      ]
+    },
+    "words_per_utterance": {
+      "min": "double",
+      "max": "double",
+      "mean": "double",
+      "std": "double",
+      "quantiles": [
+        {
+          "level": "double",
+          "value": "double"
+        }
+      ]
+    },
+    "letters_per_utterance": {
+      "min": "double",
+      "max": "double",
+      "mean": "double",
+      "std": "double",
+      "quantiles": [
+        {
+          "level": "double",
+          "value": "double"
+        }
+      ]
+    },
+    "utterance_count": "int64",
+    "utterance_duration_estimation": {
+      "min": "double",
+      "max": "double",
+      "mean": "double",
+      "std": "double",
+      "quantiles": [
+        {
+          "level": "double",
+          "value": "double"
+        }
+      ]
+    }
+  },
+  "conversation_analysis": {
+    "conversation_boundaries": {
+      "start_time_ms": "int64",
+      "end_time_ms": "int64"
+    },
+    "total_simultaneous_silence_duration_ms": "int64",
+    "total_simultaneous_silence_ratio": "double",
+    "simultaneous_silence_duration_estimation": {
+      "min": "double",
+      "max": "double",
+      "mean": "double",
+      "std": "double",
+      "quantiles": [
+        {
+          "level": "double",
+          "value": "double"
+        }
+      ]
+    },
+    "total_simultaneous_speech_duration_ms": "int64",
+    "total_simultaneous_speech_ratio": "double",
+    "simultaneous_speech_duration_estimation": {
+      "min": "double",
+      "max": "double",
+      "mean": "double",
+      "std": "double",
+      "quantiles": [
+        {
+          "level": "double",
+          "value": "double"
+        }
+      ]
+    },
+    "speaker_interrupts": [
+      {
+        "speaker_tag": "string",
+        "interrupts_count": "int64",
+        "interrupts_duration_ms": "int64",
+        "interrupts": [
+          {
+            "start_time_ms": "int64",
+            "end_time_ms": "int64"
+          }
+        ]
+      }
+    ],
+    "total_speech_duration_ms": "int64",
+    "total_speech_ratio": "double"
+  },
+  "summarization": {
+    "results": [
+      {
+        "response": "string"
+      }
+    ],
+    "content_usage": {
+      "input_text_tokens": "int64",
+      "completion_tokens": "int64",
+      "total_tokens": "int64"
+    }
+  },
+  // end of the list of possible fields
+  "channel_tag": "string"
+}

@@ -1,3 +1,4 @@
+
 # [Yandex SpeechKit v3 Streaming STT Example](https://yandex.cloud/ru/docs/speechkit/stt/api/streaming-examples-v3)
 This project demonstrates how to use the Yandex Cloud SpeechKit v3 API for streaming speech-to-text recognition.
 
@@ -28,23 +29,16 @@ poetry install
 
 **3. Generate gRPC Client Code for Yandex Cloud API:**
 
-The gRPC client code (stub files) must be generated from the .proto files. All necessary .proto files you must add from [yandex-cloud/cloudapi/](https://github.com/yandex-cloud/cloudapi.git) repo.
+The gRPC client code (stub files) must be generated from the .proto files. All .proto files you must add from [yandex-cloud/cloudapi/](https://github.com/yandex-cloud/cloudapi.git) library.
 
   1. ***Управление зависимостями с помощью Git Submodule***
 
-* Чтобы не хранить код стороннего репозитария yandex-cloud/cloudapi напрямую в нашем локальном репозитории проекта, мы используем git submodule. Это позволяет нам ссылаться на конкретную версию (коммит) cloudapi, сохраняя наш репозиторий чистым и упрощая обновления.
+* Чтобы не хранить код сторонней библиотеки yandex-cloud/cloudapi напрямую в нашем репозитории, мы используем git submodule. Это позволяет нам ссылаться на конкретную версию (коммит) cloudapi, сохраняя наш репозиторий чистым и упрощая обновления.
 * Добавьте (склонируйте) репозиторий Yandex Cloud API, как submodule в ваш проект в папку `src/cloudapi`:
 
   ```bash
   git submodule add https://github.com/yandex-cloud/cloudapi.git src/cloudapi
   ```
-
-  Чтобы в дальнейшем иметь последнюю версию файлов из репозитория yandex-cloud/cloudapi обновите его локальное содержимое командой: 
-  
-  ```bash
-  git submodule update --init --recursive
-  ```
-
   2. ***Generation of Python files (\*.py) and stub files (\*.pyi) from .proto.***
 
   Из корня проекта `zumka` выполните команду:
@@ -64,7 +58,7 @@ The gRPC client code (stub files) must be generated from the .proto files. All n
       yandex/cloud/ai/stt/v3/stt_service.proto \
       yandex/cloud/ai/stt/v3/stt.proto
   ```
-  В корне вашего проекта `zumka` будут созданы две папки: `/src/google` и `/src/yandex`, которые будут содержать внутри себя сгенерированные Python файлы (\*.py) с классами для работы по gRPC с Yandex SpeechKit API и stub-файлы (\*.pyi) с описанием интерфейса.  
+  В корне вашего проекта `zumka` будут созданы две папки: `/src/google` и `/src/yandex`, которые будут содержать внутри себя сгенерированные Python файлы (*.py) с классами для работы по gRPC с Yandex SpeechKit API и stub-файлы (*.pyi) с описанием интерфейса.  
 
 ## Configuration
 
