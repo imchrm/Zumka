@@ -1,6 +1,8 @@
 #coding=utf8
 
 import argparse
+from ast import Dict, Set
+from ctypes import Array
 import sys
 import logging
 import os
@@ -114,7 +116,13 @@ def run_capture_audio_data_from_micrphone(api_key: str) -> None:
     ))
     was_exception = False
     # Обработайте ответы сервера и выведите результат в консоль.
+    evn_final = 'final'
+    evn_final_refinement = 'final_refinement'
+    evn_partial = 'partial'
+    prop_alternatives = 'alternatives'
+    prop_text = 'text'
     try:
+        
         response:stt_pb2.StreamingResponse
         for response in it:
             # Checking for the existence of the following properties:
@@ -125,22 +133,25 @@ def run_capture_audio_data_from_micrphone(api_key: str) -> None:
             # if hasattr(response, "eou_update"):
             #     if response.eou_update:
             #         log.info("EOU upd t:%s", response.eou_update.time_ms)
-            if hasattr(response, "final"):
-                if hasattr(response.final, "alternatives"):
-                    if response.final.alternatives:
-                        if hasattr(response.final.alternatives[0], "text"):
-                            log.info('r.f.alts[0].txt %s', response.final.alternatives[0].text)
-            if hasattr(response, "partial"):
-                if hasattr(response.partial, "alternatives"):
+            
+            if hasattr(response, evn_final):
+                if hasattr(response.final, prop_alternatives):
+                    a = response.final.alternatives
+                    if a:
+                        if hasattr(a[0], prop_text):
+                            log.info('    final %s', a[0].text)
+            if hasattr(response, evn_partial):
+                if hasattr(response.partial, prop_alternatives):
                     if response.partial.alternatives:
-                        if hasattr(response.partial.alternatives[0], "text"):
-                            log.info('r.p.alts[0].txt %s', response.partial.alternatives[0].text)
-            if hasattr(response, "final_refinement"):
+                        if hasattr(response.partial.alternatives[0], prop_text):
+                            log.info('    partial %s', response.partial.alternatives[0].text)
+            if hasattr(response, evn_final_refinement):
                 if hasattr(response.final_refinement, "normalized_text"):
-                    if hasattr(response.final_refinement.normalized_text, "alternatives"):
+                    if hasattr(response.final_refinement.normalized_text, prop_alternatives):
                         if response.final_refinement.normalized_text.alternatives:
-                            if hasattr(response.final_refinement.normalized_text.alternatives[0], "text"):
-                                log.info('r.f_r.alts[0].txt %s', response.final_refinement.normalized_text.alternatives[0].text)
+                            if hasattr(response.final_refinement.normalized_text.alternatives[0], prop_text):
+                                log.info('    final_refinement %s', response.final_refinement.normalized_text.alternatives[0].text)
+                                
     except KeyboardInterrupt:
         log.info("User interruption by Ctrl+C")
     except grpc.RpcError as err:

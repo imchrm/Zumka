@@ -77,16 +77,10 @@ To use the API, you need to authenticate with Yandex Cloud.
 
 ## Usage
 
-Launch the application 
+Capture of speech data from a microphone.
+Launch the application.
 ```bash
 poetry run python -m zumka.main
 ```
-By default zumka.main is using constant `AUDIO_PATH = "assets/sound/speech_00.pcm"` for speech recognition.
+<!-- By default zumka.main is using constant `AUDIO_PATH = "assets/sound/speech_00.pcm"` for speech recognition. -->
 
-Результат распознавания:
-```bash
-Processing speech file: assets/sound/speech_00.pcm
-type=partial, alternatives=['нет']
-type=final, alternatives=['привет мир']
-type=final_refinement, alternatives=['Привет мир']
-```
