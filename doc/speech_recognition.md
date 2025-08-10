@@ -27,3 +27,27 @@ Final results, the recognition is now fixed until final_time_ms. For now, final 
 * **final_refinement** -
 
 For each final, if normalization is enabled, sent the normalized text (or some other advanced post-processing). Final normalization will introduce additional latency.
+
+
+Text of 
+
+Эркин экин эккан экан.
+
+Yuz marta yuzingni yuv,
+Yuzingda yuz tabassum bo‘lsin.
+
+Qoʻpin goʻyib
+Qor bobo
+Qoʻl qopini yedirib
+Kiyish uchun qalpogʻin
+Qulogʻiga qoʻndirib
+
+Qoʻpin qoʻyib Qor bobo
+Qoʻl qopini qidirdi.
+Qorgiz qalin qalpog'in
+Qulog'iga qo'ndirdi.
+
+Qoʻpin qoʻyib Qorbobo 
+Qoʻl qopini qidiradi.
+Qorqiz qalin qalpog'in 
+Qulog'iga qo'ndirdi.

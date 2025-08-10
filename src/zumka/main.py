@@ -20,21 +20,20 @@ from yandex.cloud.ai.stt.v3 import stt_service_pb2_grpc
 
 log = logging.getLogger("Test")
 
-DEVICE_ID = None
-SAMPLERATE = 8000
-# BLOCK_SIZE = 4000
-CHANNELS = 1
-CHUNK_SIZE = 4000
-RECORD_SECONDS = 14
-
-AUDIO_PATH = "assets/sound/speech_00.pcm"
 STT_HOST = 'stt.api.cloud.yandex.net'
 STT_PORT = 443
+
+DEVICE_ID = -1
+LANGUAGE_CODE = 'ru-RU' # uz-UZ
+SAMPLERATE = 8000
+CHANNELS = 1
+CHUNK_SIZE = 4000 # or block size, it's same
+RECORD_SECONDS = 14 # Time limit for recognition process 
 
 audio_queue = queue.Queue()
 is_recognition = False
 
-def create_recognition_config() -> stt_pb2.StreamingOptions:
+def create_recognition_config(language:str) -> stt_pb2.StreamingOptions:
     """Создает и возвращает конфигурацию для потокового распознавания."""
     return stt_pb2.StreamingOptions(
         recognition_model=stt_pb2.RecognitionModelOptions(
@@ -52,13 +51,13 @@ def create_recognition_config() -> stt_pb2.StreamingOptions:
             ),
             language_restriction=stt_pb2.LanguageRestrictionOptions(
                 restriction_type=stt_pb2.LanguageRestrictionOptions.WHITELIST,
-                language_code=['ru-RU'],
+                language_code=[language],
             ),
             audio_processing_type=stt_pb2.RecognitionModelOptions.REAL_TIME,
         ),
     )
 
-def gen_mic(config: stt_pb2.StreamingOptions) -> Iterator[stt_pb2.StreamingRequest]:
+def gen_mic(config: stt_pb2.StreamingOptions, device_id:int) -> Iterator[stt_pb2.StreamingRequest]:
     """
     Get data from microfone
     """
@@ -67,15 +66,15 @@ def gen_mic(config: stt_pb2.StreamingOptions) -> Iterator[stt_pb2.StreamingReque
     def audio_queue_callback(indata, frames, time, status):
                 audio_queue.put(bytes(indata))
     
-    # Отправьте сообщение с настройками распознавания.
+    # Отправка сообщения с настройками распознавания.
     yield stt_pb2.StreamingRequest(session_options=config)
     chunk_num = SAMPLERATE * RECORD_SECONDS / CHUNK_SIZE
     i = 0
-    with sd.RawInputStream(samplerate=SAMPLERATE, 
-                        blocksize=CHUNK_SIZE, 
-                        device=DEVICE_ID, 
-                        dtype='int16', 
-                        channels=CHANNELS, 
+    with sd.RawInputStream(samplerate=SAMPLERATE,
+                        blocksize=CHUNK_SIZE,
+                        device=device_id,
+                        dtype='int16',
+                        channels=CHANNELS,
                         callback=audio_queue_callback):
         while is_recognition:
             try:
@@ -89,7 +88,7 @@ def gen_mic(config: stt_pb2.StreamingOptions) -> Iterator[stt_pb2.StreamingReque
                 # Если данных нет, просто продолжаем цикл, проверяя is_recognition
                 continue
 
-def run_capture_audio_data_from_micrphone(api_key: str) -> None:
+def run_capture_audio_data_from_microphone(api_key: str, device_id: int, language: str) -> None:
     """
     Запускает процесс потокового распознавания речи.
     
@@ -102,12 +101,12 @@ def run_capture_audio_data_from_micrphone(api_key: str) -> None:
     channel = grpc.secure_channel(f'{STT_HOST}:{STT_PORT}', cred)
     stub = stt_service_pb2_grpc.RecognizerStub(channel)
     
-    recognition_config = create_recognition_config()
+    recognition_config = create_recognition_config(language)
     
     is_recognition = True
     
     it: Iterator[stt_pb2.StreamingResponse] = stub.RecognizeStreaming(
-        gen_mic(recognition_config), 
+        gen_mic(recognition_config, device_id), 
         metadata=(
         ## Параметры для авторизации с IAM-токеном
         ## ('authorization', f'Bearer {iam_token}'),
@@ -115,41 +114,33 @@ def run_capture_audio_data_from_micrphone(api_key: str) -> None:
         ('authorization', f'Api-Key {api_key}'),
     ))
     was_exception = False
-    # Обработайте ответы сервера и выведите результат в консоль.
-    evn_final = 'final'
-    evn_final_refinement = 'final_refinement'
-    evn_partial = 'partial'
-    prop_alternatives = 'alternatives'
-    prop_text = 'text'
+    # Обработка ответов сервера и вывед результата.
+    final_prop = 'final'
+    final_refinement_prop = 'final_refinement'
+    partial_prop = 'partial'
+    alternatives_prop = 'alternatives'
+    text_prop = 'text'
+    
     try:
-        
         response:stt_pb2.StreamingResponse
         for response in it:
             # Checking for the existence of the following properties:
-            # response.final.alternatives[0].text
-            # response.partial.alternatives[0].text
-            # response.final_refinement.normalized_text.alternatives[0].text
-            # response.eou_update.time_ms
-            # if hasattr(response, "eou_update"):
-            #     if response.eou_update:
-            #         log.info("EOU upd t:%s", response.eou_update.time_ms)
-            
-            if hasattr(response, evn_final):
-                if hasattr(response.final, prop_alternatives):
+            if hasattr(response, final_prop):
+                if hasattr(response.final, alternatives_prop):
                     a = response.final.alternatives
                     if a:
-                        if hasattr(a[0], prop_text):
+                        if hasattr(a[0], text_prop):
                             log.info('    final %s', a[0].text)
-            if hasattr(response, evn_partial):
-                if hasattr(response.partial, prop_alternatives):
+            if hasattr(response, partial_prop):
+                if hasattr(response.partial, alternatives_prop):
                     if response.partial.alternatives:
-                        if hasattr(response.partial.alternatives[0], prop_text):
+                        if hasattr(response.partial.alternatives[0], text_prop):
                             log.info('    partial %s', response.partial.alternatives[0].text)
-            if hasattr(response, evn_final_refinement):
+            if hasattr(response, final_refinement_prop):
                 if hasattr(response.final_refinement, "normalized_text"):
-                    if hasattr(response.final_refinement.normalized_text, prop_alternatives):
+                    if hasattr(response.final_refinement.normalized_text, alternatives_prop):
                         if response.final_refinement.normalized_text.alternatives:
-                            if hasattr(response.final_refinement.normalized_text.alternatives[0], prop_text):
+                            if hasattr(response.final_refinement.normalized_text.alternatives[0], text_prop):
                                 log.info('    final_refinement %s', response.final_refinement.normalized_text.alternatives[0].text)
                                 
     except KeyboardInterrupt:
@@ -172,151 +163,81 @@ def run_capture_audio_data_from_micrphone(api_key: str) -> None:
         if was_exception:
             sys.exit(1)
 
-def gen(config: stt_pb2.StreamingOptions, audio_file_name: str) -> Iterator[stt_pb2.StreamingRequest]:
-    """
-    Генератор, который сначала отправляет настройки, а затем аудиоданные по частям.
-
-    Args:
-        config: Конфигурация для сессии распознавания.
-        audio_file_name: Путь к аудиофайлу для распознавания.
-
-    Yields:
-        Объекты StreamingRequest для отправки на сервер.
-    """
-    # Отправьте сообщение с настройками распознавания.
-    yield stt_pb2.StreamingRequest(session_options=config)
-
-    # Прочитайте аудиофайл и отправьте его содержимое порциями.
-    with open(audio_file_name, 'rb') as f:
-        data = f.read(CHUNK_SIZE)
-        while data != b'':
-            yield stt_pb2.StreamingRequest(chunk=stt_pb2.AudioChunk(data=data))
-            data = f.read(CHUNK_SIZE)
-
-# Вместо iam_token передавайте api_key при авторизации с API-ключом
-# от имени сервисного аккаунта.
-def run(api_key: str, audio_file_path: str) -> None:  # noqa: C901
-    """
-    Запускает процесс потокового распознавания речи.
-
-    Args:
-        api_key: API-ключ сервисного аккаунта.
-        audio_file_path: Путь к аудиофайлу для распознавания.
-    """
-    # Установка соединение с сервером.
-    cred = grpc.ssl_channel_credentials()
-    channel = grpc.secure_channel(f'{STT_HOST}:{STT_PORT}', cred)
-    stub = stt_service_pb2_grpc.RecognizerStub(channel)
-
-    recognition_config = create_recognition_config()
-    # Отправьте данные для распознавания.
-    it: Iterator[stt_pb2.StreamingResponse] = stub.RecognizeStreaming(gen(recognition_config, audio_file_path), metadata=(
-        ## Параметры для авторизации с IAM-токеном
-        ## ('authorization', f'Bearer {iam_token}'),
-    # Параметры для авторизации с API-ключом от имени сервисного аккаунта
-        ('authorization', f'Api-Key {api_key}'),
-    ))
-
-    was_exception = False
-    # Обработайте ответы сервера и выведите результат в консоль.
-    try:
-        response:stt_pb2.StreamingResponse
-        for response in it:
-            event_type = response.WhichOneof('Event') # partial, final, final_refinement
-            if not event_type:
-                continue
-
-            event = getattr(response, event_type) # r
-            alternatives_source = None
-
-            if event_type in ('partial', 'final'):
-                alternatives_source = event.alternatives
-            elif event_type == 'final_refinement':
-                alternatives_source = event.normalized_text.alternatives
-
-            alternatives = [a.text for a in alternatives_source] if alternatives_source else None
-            
-            if alternatives:
-                log.info('type=%s, alternatives=%s', event_type, alternatives)
-                
-    except grpc.RpcError as err:
-        log.error("gRPC error: %s", err)
-        # Проверяем статус-код. Например, `StatusCode.UNAUTHENTICATED`
-        if err.code() == grpc.StatusCode.UNAUTHENTICATED:
-            log.error("Authentication failed. Please check your API key.")
-        was_exception = True
-        # Можно добавить обработку других кодов
-    except Exception as e:
-        log.error(f'Error: {e}')
-        was_exception = True
-        
-    # except grpc.Channel._Rendezvous as err:
-    #     log.error(f'Error code {err._state.code}, message: {err._state.details}')
-    finally:
-        channel.close()
-        log.info(f"f'Secure channel on:{STT_HOST}:{STT_PORT}' was closed.")
-        if was_exception:
-            sys.exit(1)
-
-def _check_capture_device(device_id):
-        devices = sd.query_devices()
+def get_audio_capture_device_id(device_id: int) ->int:
+        id = -1
         name:str = ""
-        log.debug(f"Available speech capture devices:")
+        devices = sd.query_devices()
+        log.debug(f"Available list of c/p audio devices:") # c/p where 'c' is capture and 'p' is playback
         if devices:
             for i, device in enumerate(devices):
                 name = device.get("name", "") if isinstance(device, dict) else str(device)
-                log.info(f"{i}: {name}")
-        if device_id is not None and device_id >= len(devices):
-            log.error(f"Device with ID {device_id} not found!")
-            exit(1)
-        current_device = sd.query_devices(device_id, 'input')
+                log.debug(f"{i}: {name}")
+        if device_id >= len(devices):
+            raise ValueError(f"Device with ID {device_id} not found!")
+        # Change number of default device to None if device_id == -1
+        current_device = sd.query_devices(device_id if device_id != -1 else None, 'input') 
         if current_device:
             name = current_device.get("name", "") if isinstance(current_device, dict) else str(current_device)
-            log.debug(f"The device is in use: {name if device_id else 'Default device: ' + name}")
+            id = current_device.get("index", 0) if isinstance(current_device, dict) else 0
+            log.info(f"The device is in use: {name if device_id > -1 else 'Default device id: ' + str(id) + ' name: ' + name}")
             
         log.debug(f"Parameters of speech capturing: "
                 f"Samplerate: {SAMPLERATE}, "
                 f"Block size: {CHUNK_SIZE}, "
                 f"Channels: {CHANNELS}, ")
+        return id
 
 def main() -> NoReturn:
     """
     Точка входа в скрипт.
     """
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
-
+    # Stupid, untyped module
     parser = argparse.ArgumentParser(description="Recognize speech from an audio file using Yandex SpeechKit.")
-    parser.add_argument(
-        "audio_file",
-        type=Path,
-        nargs='?',
-        default=Path(AUDIO_PATH),
-        help=f"Path to the audio file (LPCM, 8kHz, 16-bit, mono). Defaults to {AUDIO_PATH}"
-    )
-    args = parser.parse_args()
 
+    device_prop = "device"
+    language_prop = "language"
+    
+    parser.add_argument(
+        "-d",
+        f"--{device_prop}",
+        type=int,
+        default=DEVICE_ID,
+        help=f"Number of microphone. Defaults to {DEVICE_ID}"
+    )
+    parser.add_argument(
+        "-l",
+        f"--{language_prop}",
+        type=str,
+        default=LANGUAGE_CODE,
+        help=f"Language code. Defaults to {LANGUAGE_CODE}"
+    )
+
+    args = parser.parse_args()
+    
+    
+    device = getattr(args, device_prop, DEVICE_ID)
+    language = getattr(args, language_prop, LANGUAGE_CODE)
+    
+    log.debug("Number of audio capture device: %s and language: %s", device, language)
+    
     load_dotenv()
     api_key = os.getenv("YANDEX_API_KEY")
     if not api_key:
-        log.error("YANDEX_API_KEY environment variable not set.")
+        log.error("YANDEX_API_KEY environment variable not set in .env file. Set it and try again.")
         sys.exit(1)
-
-    audio_path = args.audio_file
-    if not audio_path.is_file():
-        log.error("Audio file not found at: %s", audio_path)
-        sys.exit(1)
-
-    _check_capture_device(DEVICE_ID)
     
-    # log.info("Processing speech file: %s", audio_path)
-    # run(api_key, {audio_path}")
-    # run(api_key, str(audio_path))
     try:
-        log.info("Start the speech recognition process...")
-        run_capture_audio_data_from_micrphone(api_key)
+        log.info("Start the speech recognition process \n\
+on secure channel: '%s:%s' ...", STT_HOST, STT_PORT)
+        run_capture_audio_data_from_microphone(
+            api_key, 
+            get_audio_capture_device_id(device), 
+            language
+        )
     except Exception as e:
         log.critical("Critiacal Exception %s", e)
         sys.exit(1)
