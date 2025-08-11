@@ -11,6 +11,7 @@ venv/
 env/
 htmlcov/
 .coverage
+__*.*
 
 # Файлы настроек IDE и редакторов
 .idea/

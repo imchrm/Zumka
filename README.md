@@ -78,9 +78,14 @@ To use the API, you need to authenticate with Yandex Cloud.
 ## Usage
 
 Capture of speech data from a microphone.
+
+You can add come arguments:
+--device (-d) -- mumber of capture audio device (defaults to `-1`)
+--language (l) -- language code like: ru-RU, en-US, uz-UZ etc. (defaults to `ru-RU`)
+
 Launch the application.
 ```bash
-poetry run python -m zumka.main
+poetry run python -m zumka.main -d -1 -l uz-UZ
 ```
 <!-- By default zumka.main is using constant `AUDIO_PATH = "assets/sound/speech_00.pcm"` for speech recognition. -->
 
