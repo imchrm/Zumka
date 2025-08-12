@@ -79,8 +79,8 @@ To use the API, you need to authenticate with Yandex Cloud.
 
 Capture of speech data from a microphone.
 
-You can add come arguments:
---device (-d) -- mumber of capture audio device (defaults to `-1`)
+You can add some arguments:
+--device (-d) -- mumber of capture audio device (defaults to `-1` it means default audio capture device)
 --language (l) -- language code like: ru-RU, en-US, uz-UZ etc. (defaults to `ru-RU`)
 
 Launch the application.

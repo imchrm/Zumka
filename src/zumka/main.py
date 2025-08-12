@@ -25,6 +25,13 @@ STT_PORT = 443
 
 DEVICE_ID = -1
 LANGUAGE_CODE = 'ru-RU' # uz-UZ
+
+AUDIO_ENCODING = stt_pb2.RawAudio.LINEAR16_PCM
+AUDIO_CHANNEL_COUNT = 1
+TEXT_NORMALIZATION = stt_pb2.TextNormalizationOptions.TEXT_NORMALIZATION_ENABLED
+RESTRICTION_TYPE = stt_pb2.LanguageRestrictionOptions.WHITELIST
+AUDIO_PROCESSING_TYPE = stt_pb2.RecognitionModelOptions.REAL_TIME
+
 SAMPLERATE = 8000
 CHANNELS = 1
 CHUNK_SIZE = 4000 # or block size, it's same
@@ -33,27 +40,30 @@ RECORD_SECONDS = 14 # Time limit for recognition process
 audio_queue = queue.Queue()
 is_recognition = False
 
-def create_recognition_config(language:str) -> stt_pb2.StreamingOptions:
+def create_recognition_options(language:str) -> stt_pb2.StreamingOptions:
     """Создает и возвращает конфигурацию для потокового распознавания."""
+    audio_encoding = "LINEAR16_PCM" if AUDIO_ENCODING == 1 else "MULAW"
+    normalization_enabled = "enabled" if TEXT_NORMALIZATION == 1 else "disabled"
+    log.debug("Options of speech recognition: audio encoding: %s, language: %s, text normalization: %s", audio_encoding, language, normalization_enabled)
     return stt_pb2.StreamingOptions(
         recognition_model=stt_pb2.RecognitionModelOptions(
             audio_format=stt_pb2.AudioFormatOptions(
                 raw_audio=stt_pb2.RawAudio(
-                    audio_encoding=stt_pb2.RawAudio.LINEAR16_PCM,
-                    sample_rate_hertz=8000,
-                    audio_channel_count=1,
+                    audio_encoding=AUDIO_ENCODING,
+                    sample_rate_hertz=SAMPLERATE,
+                    audio_channel_count=AUDIO_CHANNEL_COUNT,
                 ),
             ),
             text_normalization=stt_pb2.TextNormalizationOptions(
-                text_normalization=stt_pb2.TextNormalizationOptions.TEXT_NORMALIZATION_ENABLED,
+                text_normalization=TEXT_NORMALIZATION,
                 profanity_filter=True,
                 literature_text=False,
             ),
             language_restriction=stt_pb2.LanguageRestrictionOptions(
-                restriction_type=stt_pb2.LanguageRestrictionOptions.WHITELIST,
+                restriction_type=RESTRICTION_TYPE,
                 language_code=[language],
             ),
-            audio_processing_type=stt_pb2.RecognitionModelOptions.REAL_TIME,
+            audio_processing_type=AUDIO_PROCESSING_TYPE,
         ),
     )
 
@@ -83,6 +93,7 @@ def gen_mic(config: stt_pb2.StreamingOptions, device_id:int) -> Iterator[stt_pb2
                 yield stt_pb2.StreamingRequest(chunk=stt_pb2.AudioChunk(data=data))
                 i += 1
                 if i == chunk_num:
+                    log.info("Interrupt on time out: %s seconds", RECORD_SECONDS)
                     is_recognition = False
             except queue.Empty:
                 # Если данных нет, просто продолжаем цикл, проверяя is_recognition
@@ -101,7 +112,7 @@ def run_capture_audio_data_from_microphone(api_key: str, device_id: int, languag
     channel = grpc.secure_channel(f'{STT_HOST}:{STT_PORT}', cred)
     stub = stt_service_pb2_grpc.RecognizerStub(channel)
     
-    recognition_config = create_recognition_config(language)
+    recognition_config = create_recognition_options(language)
     
     is_recognition = True
     
