@@ -58,9 +58,9 @@ Or you can directly execute the generate command in the Linux terminal (not reco
       yandex/cloud/ai/stt/v3/stt_service.proto \
       yandex/cloud/ai/stt/v3/stt.proto
   ```
-  For Wimdows OS you must replace each symbol `\` on `` ` ``
+  For Wimdows OS you must replace each symbol `\` by `` ` ``.
 
-  После запуска команды в корне вашего проекта `zumka` будут созданы две папки: `/src/google` и `/src/yandex`, которые будут содержать внутри себя сгенерированные Python файлы (\*.py) с классами для работы по gRPC с Yandex SpeechKit API и stub-файлы (\*.pyi) с определениями классов и типов вызываемых свойств и методов.
+  После запуска команды в корне вашего проекта `zumka` будут созданы две папки: `/src/google` и `/src/yandex`, которые будут содержать внутри себя сгенерированные Python файлы (\*.py) с классами для работы по gRPC с Yandex SpeechKit API и stub-файлы (\*.pyi) с определениями типов вызываемых свойств и методов.
 
 ## Configuration
 
@@ -69,7 +69,7 @@ To use the API, you need to authenticate with Yandex Cloud.
 1. Follow the official documentation to create [a service account](https://yandex.cloud/ru/docs/iam/operations/sa/create).
 2. Assign the ai.speechkit-stt.user role (or a higher one) to it.
 3. Get an [API key](https://yandex.cloud/ru/docs/iam/concepts/authorization/api-key) for the service account or [IAM-token](https://yandex.cloud/ru/docs/iam/concepts/authorization/iam-token).
-4. Add API key as parameter YANDEX_API_KEY in `.env` file in root directory of the project.
+4. Add API key as parameter `YANDEX_API_KEY` in `.env` file in root directory of the project.
 
 ## Usage
 
@@ -78,6 +78,8 @@ Capture of speech data from a microphone.
 You can add some arguments:
   * `--device (-d)` - number of capture audio device (defaults to `-1` it means default audio capture device)
   * `--language (-l)` - language code like: ru-RU, en-US, uz-UZ etc. (defaults to `ru-RU`)
+  * `--samplerate (-sr)` - sample rate in Hz (defaults to `8000`). Possible values: 8000, 16000, 32000.
+
 
 Launch the application.
 ```bash

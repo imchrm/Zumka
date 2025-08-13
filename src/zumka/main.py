@@ -40,7 +40,7 @@ RECORD_SECONDS = 14 # Time limit for recognition process
 audio_queue = queue.Queue()
 is_recognition = False
 
-def create_recognition_options(language:str) -> stt_pb2.StreamingOptions:
+def create_recognition_options(language:str, samplerate:int) -> stt_pb2.StreamingOptions:
     """Создает и возвращает конфигурацию для потокового распознавания."""
     audio_encoding = "LINEAR16_PCM" if AUDIO_ENCODING == 1 else "MULAW"
     normalization_enabled = "enabled" if TEXT_NORMALIZATION == 1 else "disabled"
@@ -50,7 +50,7 @@ def create_recognition_options(language:str) -> stt_pb2.StreamingOptions:
             audio_format=stt_pb2.AudioFormatOptions(
                 raw_audio=stt_pb2.RawAudio(
                     audio_encoding=AUDIO_ENCODING,
-                    sample_rate_hertz=SAMPLERATE,
+                    sample_rate_hertz=samplerate,
                     audio_channel_count=AUDIO_CHANNEL_COUNT,
                 ),
             ),
@@ -67,7 +67,7 @@ def create_recognition_options(language:str) -> stt_pb2.StreamingOptions:
         ),
     )
 
-def gen_mic(config: stt_pb2.StreamingOptions, device_id:int) -> Iterator[stt_pb2.StreamingRequest]:
+def gen_mic(config: stt_pb2.StreamingOptions, device_id:int, samplerate:int) -> Iterator[stt_pb2.StreamingRequest]:
     """
     Get data from microfone
     """
@@ -78,9 +78,9 @@ def gen_mic(config: stt_pb2.StreamingOptions, device_id:int) -> Iterator[stt_pb2
     
     # Отправка сообщения с настройками распознавания.
     yield stt_pb2.StreamingRequest(session_options=config)
-    chunk_num = SAMPLERATE * RECORD_SECONDS / CHUNK_SIZE
+    chunk_num = samplerate * RECORD_SECONDS / CHUNK_SIZE
     i = 0
-    with sd.RawInputStream(samplerate=SAMPLERATE,
+    with sd.RawInputStream(samplerate=samplerate,
                         blocksize=CHUNK_SIZE,
                         device=device_id,
                         dtype='int16',
@@ -99,7 +99,7 @@ def gen_mic(config: stt_pb2.StreamingOptions, device_id:int) -> Iterator[stt_pb2
                 # Если данных нет, просто продолжаем цикл, проверяя is_recognition
                 continue
 
-def run_capture_audio_data_from_microphone(api_key: str, device_id: int, language: str) -> None:
+def run_capture_audio_data_from_microphone(api_key: str, device_id: int, language: str, samplerate: int) -> None:
     """
     Запускает процесс потокового распознавания речи.
     
@@ -112,12 +112,12 @@ def run_capture_audio_data_from_microphone(api_key: str, device_id: int, languag
     channel = grpc.secure_channel(f'{STT_HOST}:{STT_PORT}', cred)
     stub = stt_service_pb2_grpc.RecognizerStub(channel)
     
-    recognition_config = create_recognition_options(language)
+    recognition_config = create_recognition_options(language, samplerate)
     
     is_recognition = True
     
     it: Iterator[stt_pb2.StreamingResponse] = stub.RecognizeStreaming(
-        gen_mic(recognition_config, device_id), 
+        gen_mic(recognition_config, device_id, samplerate), 
         metadata=(
         ## Параметры для авторизации с IAM-токеном
         ## ('authorization', f'Bearer {iam_token}'),
@@ -193,7 +193,6 @@ def get_audio_capture_device_id(device_id: int) ->int:
             log.info(f"The device is in use: {name if device_id > -1 else 'Default device id: ' + str(id) + ' name: ' + name}")
             
         log.debug(f"Parameters of speech capturing: "
-                f"Samplerate: {SAMPLERATE}, "
                 f"Block size: {CHUNK_SIZE}, "
                 f"Channels: {CHANNELS}, ")
         return id
@@ -211,13 +210,14 @@ def main() -> NoReturn:
 
     device_prop = "device"
     language_prop = "language"
+    samplerate_prop = "samplerate"
     
     parser.add_argument(
         "-d",
         f"--{device_prop}",
         type=int,
         default=DEVICE_ID,
-        help=f"Number of microphone. Defaults to {DEVICE_ID}"
+        help=f"Number of audio capture device (microphone). Defaults to {DEVICE_ID}"
     )
     parser.add_argument(
         "-l",
@@ -226,14 +226,21 @@ def main() -> NoReturn:
         default=LANGUAGE_CODE,
         help=f"Language code. Defaults to {LANGUAGE_CODE}"
     )
+    parser.add_argument(
+        "-sr",
+        f"--{samplerate_prop}",
+        type=int,
+        default=SAMPLERATE,
+        help=f"Sample rate. Defaults to {SAMPLERATE}"
+    )
 
     args = parser.parse_args()
     
-    
     device = getattr(args, device_prop, DEVICE_ID)
     language = getattr(args, language_prop, LANGUAGE_CODE)
+    samplerate = getattr(args, samplerate_prop, SAMPLERATE)
     
-    log.debug("Number of audio capture device: %s and language: %s", device, language)
+    log.debug("Number of audio capture device: %s, language: %s, samplerate: %s", device, language, samplerate)
     
     load_dotenv()
     api_key = os.getenv("YANDEX_API_KEY")
@@ -247,7 +254,8 @@ on secure channel: '%s:%s' ...", STT_HOST, STT_PORT)
         run_capture_audio_data_from_microphone(
             api_key, 
             get_audio_capture_device_id(device), 
-            language
+            language,
+            samplerate
         )
     except Exception as e:
         log.critical("Critiacal Exception %s", e)
