@@ -13,11 +13,19 @@ Authentication is handled via a service account API key.
 Follow these steps to set up the project environment.
 
 **1. Clone the repository:**
-
-```bash
-git clone https://github.com/imchrm/Zumka.git
-cd zumka
-```
+  Чтобы не хранить код стороннего репозитария yandex-cloud/cloudapi напрямую в нашем локальном репозитории проекта, мы используем git submodule. Это позволяет нам ссылаться на конкретную версию (коммит) cloudapi, сохраняя наш репозиторий чистым и упрощая обновления.
+  ***a) Для клонирования проекта и всех необходимых зависимостей (submodules) используйте команду:***
+  ```bash
+  git clone --recurse-submodules https://github.com/imchrm/Zumka.git
+  cd zumka
+  ```
+  
+  ***b) Если вы уже склонировали проект (без submodules):***
+  
+  Если вы ранее клонировали проект без флага `--recurse-submodules`, перейдите в его директорию и выполните команду для загрузки submodules:
+  ```bash
+  git submodule update --init
+  ```
 
 **2. Initialize Dependencies:**
 
@@ -28,43 +36,31 @@ poetry install
 
 **3. Generate gRPC Client Code for Yandex Cloud API:**
 
-The gRPC client code (stub files) must be generated from the .proto files. All necessary .proto files you must add from [yandex-cloud/cloudapi/](https://github.com/yandex-cloud/cloudapi.git) repo.
+The gRPC client code (stub files) must be generated from the .proto files. All necessary Python and stub-files, you must generate and run the following command in the root directory of the project (recommended):
+```bash
+poetry run generate-protos
+```
+This command will run python script `generated_protos.py` which generate \*.py and \*.pyi files from \*.proto files placed inside `src/cloudapi/` folder. The needed parameter `generate-protos` for Poetry was written inside the `pyproject.toml` file.
 
-  1. ***Управление зависимостями с помощью Git Submodule***
-
-* Чтобы не хранить код стороннего репозитария yandex-cloud/cloudapi напрямую в нашем локальном репозитории проекта, мы используем git submodule. Это позволяет нам ссылаться на конкретную версию (коммит) cloudapi, сохраняя наш репозиторий чистым и упрощая обновления.
-* Добавьте (склонируйте) репозиторий Yandex Cloud API, как submodule в ваш проект в папку `src/cloudapi`:
-
+Or you can directly execute the generate command in the Linux terminal (not recomended):
   ```bash
-  git submodule add https://github.com/yandex-cloud/cloudapi.git src/cloudapi
-  ```
-
-  Чтобы в дальнейшем иметь последнюю версию файлов из репозитория yandex-cloud/cloudapi обновите его локальное содержимое командой: 
-  
-  ```bash
-  git submodule update --init --recursive
-  ```
-
-  2. ***Generation of Python files (\*.py) and stub files (\*.pyi) from .proto.***
-
-  Из корня проекта `zumka` выполните команду:
-
-  ```bash
-  python3 -m grpc_tools.protoc -I . -I src/cloudapi/third_party/googleapis \
+  python3 -m grpc_tools.protoc -I src/cloudapi -I src/cloudapi/third_party/googleapis \
     --python_out=src \
     --mypy_out=src \
     --grpc_python_out=src \
     --mypy_grpc_out=src \
       google/api/http.proto \
       google/api/annotations.proto \
-      yandex/cloud/api/operation.proto \
       google/rpc/status.proto \
+      yandex/cloud/api/operation.proto \
       yandex/cloud/operation/operation.proto \
       yandex/cloud/validation.proto \
       yandex/cloud/ai/stt/v3/stt_service.proto \
       yandex/cloud/ai/stt/v3/stt.proto
   ```
-  В корне вашего проекта `zumka` будут созданы две папки: `/src/google` и `/src/yandex`, которые будут содержать внутри себя сгенерированные Python файлы (\*.py) с классами для работы по gRPC с Yandex SpeechKit API и stub-файлы (\*.pyi) с описанием интерфейса.  
+  For Wimdows OS you must replace each symbol `\` on `` ` ``
+
+  После запуска команды в корне вашего проекта `zumka` будут созданы две папки: `/src/google` и `/src/yandex`, которые будут содержать внутри себя сгенерированные Python файлы (\*.py) с классами для работы по gRPC с Yandex SpeechKit API и stub-файлы (\*.pyi) с определениями классов и типов вызываемых свойств и методов.
 
 ## Configuration
 
@@ -80,8 +76,8 @@ To use the API, you need to authenticate with Yandex Cloud.
 Capture of speech data from a microphone.
 
 You can add some arguments:
---device (-d) -- mumber of capture audio device (defaults to `-1` it means default audio capture device)
---language (l) -- language code like: ru-RU, en-US, uz-UZ etc. (defaults to `ru-RU`)
+  * `--device (-d)` - number of capture audio device (defaults to `-1` it means default audio capture device)
+  * `--language (-l)` - language code like: ru-RU, en-US, uz-UZ etc. (defaults to `ru-RU`)
 
 Launch the application.
 ```bash

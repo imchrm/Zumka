@@ -19,6 +19,10 @@ dependencies = [
 [tool.poetry]
 packages = [{include = "zumka", from = "src"}]
 
+[tool.poetry.scripts]
+# generation *.py & *.pyi from *.proto-files `poetry run generate-protos`
+generate-protos = "generate_protos:main" 
+
 [tool.pylint.'main']
 source-roots = ["src/"]
 # Сообщает Pylint, что члены модулей, начинающихся с yandex.*, могут быть сгенерированы динамически
